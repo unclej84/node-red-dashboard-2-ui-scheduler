@@ -1,0 +1,54 @@
+{
+    "ui-scheduler": {
+        "enabled": "enabled",
+        "disabled": "disabled",
+        "label": {
+            "name": "Name",
+            "size": "Size",
+            "group": "Group",
+            "sendStateInterval": "Interval",
+            "sendActiveState": "Active State",
+            "sendInactiveState": "Inactive State",
+            "on": "On",
+            "off": "Off",
+            "context": "Context",
+            "latitude": "Latitude",
+            "longitude": "Longitude",
+            "topic": "Topic",
+            "topics": "Topics"
+        },
+        "days": [
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday"
+        ],
+        "copy": "copy",
+        "ui": {
+            "start": "Start",
+            "starttime": "Starttime",
+            "end": "End",
+            "endtime": "Endtime",
+            "event": "Event",
+            "duration": "Duration",
+            "all": "All",
+            "sunrise": "sunrise",
+            "sunriseEnd": "sunrise end",
+            "goldenHourEnd": "golden hour end",
+            "solarNoon": "solar noon",
+            "goldenHour": "golden hour",
+            "sunsetStart": "sunset start",
+            "sunset": "sunset",
+            "dusk": "dusk",
+            "nauticalDusk": "nautical dusk",
+            "night": "night",
+            "nadir": "nadir",
+            "nightEnd": "night end",
+            "nauticalDawn": "nautical dawn",
+            "dawn": "dawn"
+        }
+    }
+}
