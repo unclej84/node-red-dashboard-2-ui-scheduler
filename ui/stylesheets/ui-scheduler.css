@@ -1,47 +1,68 @@
 .highlighted-row {
-    background-color: rgb(var(--v-theme-surface));
-    /* color: rgb(var(--v-theme-on-primary)); */
-    /* Customize this color as needed */
+  background-color: rgb(var(--v-theme-surface));
+  /* color: rgb(var(--v-theme-on-primary)); */
+  /* Customize this color as needed */
 }
 
 .main {
-    min-width: 100%;
-    /* Allows content to shrink */
-    max-width: fit-content;
-    /* Limits container width to parent width */
-    overflow: auto;
-    /* Adds scrollbar if content overflows */
-    display: inline-block;
-    /* Ensure content is scrollable if it overflows */
+  min-width: 100%;
+  /* Allows content to shrink */
+  max-width: fit-content;
+  /* Limits container width to parent width */
+  overflow: auto;
+  /* Adds scrollbar if content overflows */
+  display: inline-block;
+  /* Ensure content is scrollable if it overflows */
 }
 
- /* even rows color */
+/* even rows color */
 .v-data-table tbody tr:nth-of-type(even) {
-    background-color: rgba(0, 0, 0, .03);
+  background-color: rgba(0, 0, 0, .03);
 }
 
 /* end column  */
 .v-data-table__td.v-data-table-column--align-center {
-    margin-right: 0 !important;
-    padding-right: 0 !important;
+  margin-right: 0 !important;
+  padding-right: 0 !important;
 }
 
 /* start column  */
 .v-data-table__td.v-data-table-column--align-start {
-    margin-right: 0 !important;
-    padding-right: 0 !important;
+  margin-right: 0 !important;
+  padding-right: 0 !important;
 }
 
 .truncate-text {
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
+overflow: hidden !important;
+text-overflow: ellipsis !important;
+white-space: nowrap !important;
 }
 
 .bordered-card {
-  border: 1px solid var(--v-theme-group-outline);
+border: 1px solid var(--v-theme-group-outline);
 }
 
 .border-none {
-  border: none;
+border: none;
+}
+
+.text-green {
+  color: green;
+}
+
+.text-red {
+  color: red;
+}
+
+.centered-input .v-field__input {
+  text-align: center;
+}
+
+.centered-subheader .v-list-subheader__text {
+  margin-left: auto!important;
+  margin-right: auto!important;
+}
+
+.v-expansion-panel-text__wrapper {
+  padding: 2px!important;
 }
