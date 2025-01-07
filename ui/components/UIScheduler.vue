@@ -113,6 +113,9 @@
                                         <v-col v-if="item.offset" cols="12" sm="6">
                                             <strong>Offset:</strong> {{ item.offset }}
                                         </v-col>
+                                        <v-col v-if="item.scheduleType === 'cron'" cols="12" sm="6">
+                                            <strong>Cron Expression:</strong> {{ item.startCronExpression }}
+                                        </v-col>
                                         <v-col v-if="item.nextDate" cols="12" sm="6">
                                             <strong>Next Date:</strong> {{ item.nextDate }}
                                         </v-col>
@@ -442,7 +445,7 @@
                             />
                         </v-col>
                     </v-row>
-                    <v-row v-if="scheduleType === 'cron'" justify="center" no-gutters class="mt-6">
+                    <v-row v-if="scheduleType === 'cron'" justify="center" no-gutters class="my-6">
                         <v-col cols="12" class="d-flex justify-center">
                             <v-label>Description</v-label>
                         </v-col>
@@ -1289,6 +1292,9 @@ export default {
             this.endTime = item.endTime || this.endTime
             this.solarEvent = this.mapSolarEvent(item.solarEvent) || this.solarEvent
             this.offset = item.offset || this.offset
+            if (this.scheduleType === 'cron') {
+                this.cronValue = item.startCronExpression || this.cronValue
+            }
             this.payloadValue = true
             this.dialog = true
         },
@@ -1330,6 +1336,7 @@ export default {
             this.hourlyInterval = 1
             this.solarEvent = 'Sunrise'
             this.offset = 0
+            this.cronValue = '*/5 * * * *'
             this.hasDuration = false
             this.duration = 1
             this.payloadValue = true
