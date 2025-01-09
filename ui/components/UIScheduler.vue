@@ -90,20 +90,20 @@
                                                     {{ toTitleCase(item.period) }}
                                                 </v-list-item-subtitle>
                                             </v-list-item>
-                                            <v-list-item class="prepend-icon-spacing pb-3">
+                                            <v-list-item class="prepend-icon-spacing">
                                                 <template #prepend>
                                                     <v-icon>mdi-email-arrow-right-outline</v-icon>
                                                 </template>
                                                 <v-list-item-title>Output</v-list-item-title>
-                                                <v-list-item-subtitle>
+                                                <v-list-item-subtitle class="pb-2">
                                                     <template v-if="item.hasDuration || item.hasEndTime">
-                                                        <v-chip color="green">True</v-chip>
+                                                        <v-chip density="compact" color="green">True</v-chip>
                                                         <span> on start,</span>
-                                                        <v-chip color="red">False</v-chip>
+                                                        <v-chip density="compact" color="red">False</v-chip>
                                                         <span> on end</span>
                                                     </template>
                                                     <template v-else-if="item.payloadValue !== undefined">
-                                                        <v-chip :color="item.payloadValue ? 'green' : 'red'">
+                                                        <v-chip density="compact" :color="item.payloadValue ? 'green' : 'red'">
                                                             {{ item.payloadValue ? 'True' : 'False' }}
                                                         </v-chip>
                                                     </template>
@@ -622,7 +622,7 @@
                                 <v-btn prepend-icon="mdi-check-circle-outline" :value="true" color="green">True</v-btn>
                             </v-btn-toggle>
                             <template v-else>
-                                <v-chip color="green">True</v-chip> <span> on start,</span> <v-chip color="red">
+                                <v-chip density="compact" color="green">True</v-chip> <span> on start,</span> <v-chip density="compact" color="red">
                                     False
                                 </v-chip> <span> on end</span>
                             </template>
