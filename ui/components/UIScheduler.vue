@@ -102,12 +102,19 @@
                                                         <v-chip density="compact" color="red">False</v-chip>
                                                         <span> on end</span>
                                                     </template>
-                                                    <template v-else-if="item.payloadValue !== undefined">
-                                                        <v-chip
-                                                            density="compact"
-                                                            :color="item.payloadValue ? 'green' : 'red'"
-                                                        >
-                                                            {{ item.payloadValue ? 'True' : 'False' }}
+                                                    <template v-else-if="item.payloadValue === true">
+                                                        <v-chip density="compact" color="green">
+                                                            True
+                                                        </v-chip>
+                                                    </template>
+                                                    <template v-else-if="item.payloadValue === false">
+                                                        <v-chip density="compact" color="red">
+                                                            False
+                                                        </v-chip>
+                                                    </template>
+                                                    <template v-else>
+                                                        <v-chip density="compact" color="gray">
+                                                            Custom
                                                         </v-chip>
                                                     </template>
                                                 </v-list-item-subtitle>
@@ -660,26 +667,28 @@
                             <v-label>Output</v-label>
                         </v-col>
                         <v-col cols="12" class="d-flex justify-center">
-                            <v-btn-toggle
-                                v-if="(scheduleType === 'time' && (period === 'daily' || period === 'weekly' || period === 'monthly' || period === 'yearly')) && !hasEndTime || (scheduleType === 'time' && (period === 'minutes' || period === 'hourly') || scheduleType === 'solar') && !hasDuration || scheduleType === 'cron'"
-                                v-model="payloadValue" mandatory divided variant="elevated" border="sm" rounded="xl"
-                            >
-                                <v-btn prepend-icon="mdi-close-circle-outline" :value="false" color="red">False</v-btn>
-                                <v-btn prepend-icon="mdi-check-circle-outline" :value="true" color="green">True</v-btn>
-                            </v-btn-toggle>
-                            <template v-else>
-                                <v-chip density="compact" color="green">True</v-chip> <span> on start,</span> <v-chip
-                                    density="compact" color="red"
+                            <template v-if="(scheduleType === 'time' && (period === 'daily' || period === 'weekly' || period === 'monthly' || period === 'yearly')) && !hasEndTime || (scheduleType === 'time' && (period === 'minutes' || period === 'hourly') || scheduleType === 'solar') && !hasDuration || scheduleType === 'cron'">
+                                <v-btn-toggle
+                                    v-if=" payloadValue === true || payloadValue === false"
+                                    v-model="payloadValue" mandatory divided variant="elevated" border="sm" rounded="xl"
                                 >
-                                    False
-                                </v-chip> <span> on end</span>
+                                    <v-btn prepend-icon="mdi-close-circle-outline" :value="false" color="red">False</v-btn>
+                                    <v-btn prepend-icon="mdi-check-circle-outline" :value="true" color="green">True</v-btn>
+                                </v-btn-toggle>
+
+                                <v-chip v-else density="compact" color="gray">Custom</v-chip>
+                            </template>
+
+                            <template v-else>
+                                <v-chip density="compact" color="green">True</v-chip> <span> on start,</span>
+                                <v-chip density="compact" color="red">False</v-chip> <span> on end</span>
                             </template>
                         </v-col>
                     </v-row>
                 </v-card-text>
                 <v-card-actions class="d-flex justify-center mb-5">
-                    <v-btn variant="outlined" color="success" @click="saveSchedule">Save</v-btn>
-                    <v-btn variant="outlined" color="error" @click="closeDialog">Cancel</v-btn>
+                    <v-btn variant="outlined" color="green" @click="saveSchedule">Save</v-btn>
+                    <v-btn variant="outlined" color="red" @click="closeDialog">Cancel</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -1066,9 +1075,7 @@ export default {
         },
         onInput (msg) {
             this.$store.commit('data/bind', { widgetId: this.id, msg })
-            console.log('onInput', msg)
             if (msg.payload?.cronExpression) {
-                console.log('onInput', msg.payload?.cronExpression)
                 this.cronDescription = msg.payload?.cronExpression.description || ''
                 this.cronExpValid = msg.payload?.cronExpression.valid || false
                 this.cronNextDates = msg.payload?.cronExpression.nextDates || null
@@ -1094,10 +1101,7 @@ export default {
         },
         handleNextDatesExpand (isOpen) {
             if (!isOpen) {
-                console.log('Group expanded')
                 // You can add any other actions you want to perform here
-            } else {
-                console.log('Group collapsed')
             }
         },
 
@@ -1139,7 +1143,6 @@ export default {
             this.$socket.emit('widget-action', this.id, msg)
         },
         getCronDescription (expression) {
-            console.log('getCronDescription', expression)
             this.nextCronValue = expression
             this.cronLoading = true
             const msg = { action: 'describe', payload: { cronExpression: expression } }
@@ -1455,7 +1458,8 @@ export default {
             if (this.scheduleType === 'cron') {
                 this.cronValue = item.startCronExpression || this.cronValue
             }
-            this.payloadValue = true
+            this.payloadValue = item.payloadValue !== undefined ? item.payloadValue : this.payloadValue;
+
             this.dialog = true
         },
 
