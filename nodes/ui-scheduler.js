@@ -1068,6 +1068,8 @@ module.exports = function (RED) {
         node.queuedSerialisationRequest = null
         node.serialisationRequestBusy = null
 
+        node.initialised = false
+
         setInterval(async function () {
             if (node.serialisationRequestBusy) return
             if (node.queuedSerialisationRequest) {
@@ -1459,6 +1461,7 @@ module.exports = function (RED) {
                         })
                         .start()
                 }
+                node.initialised = true
             } catch (err) {
                 if (node.tasks) {
                     node.tasks.forEach(task => task.stop())
@@ -1470,7 +1473,7 @@ module.exports = function (RED) {
 
         node.on('close', async function (done) {
             try {
-                await serialise()
+                // await serialise()
             } catch (error) {
                 node.error(error)
             }
@@ -2289,7 +2292,7 @@ module.exports = function (RED) {
             return task
         }
         function requestSerialisation () {
-            if (node.serialisationRequestBusy) {
+            if (node.serialisationRequestBusy || node.initialised === false) {
                 return
             }
             node.queuedSerialisationRequest = Date.now()
@@ -2370,8 +2373,10 @@ module.exports = function (RED) {
                 }
 
                 const restoreState = async (state) => {
+                    node.warn(`scheduler: Loading state: ${state}`)
                     if (!state) {
                         sendSchedules()
+                        node.warn('scheduler: No state to load')
                         return // nothing to add
                     }
                     if (state.staticSchedules && state.staticSchedules.length) {
@@ -2429,6 +2434,7 @@ module.exports = function (RED) {
                 }
                 if (node.storeName === 'NONE') {
                     sendSchedules()
+                    node.warn('scheduler: No state to load')
                     return
                 }
                 if (node.storeName === 'local_file_system') {
@@ -2438,6 +2444,7 @@ module.exports = function (RED) {
                         const state = JSON.parse(fileData)
                         await restoreState(state)
                     } else {
+                        node.warn('scheduler: No state to load')
                         sendSchedules()
                         RED.log.debug(`scheduler: no persistence data found for node '${node.id}'.`)
                     }
