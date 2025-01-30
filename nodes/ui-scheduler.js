@@ -1067,13 +1067,13 @@ module.exports = function (RED) {
 
         node.queuedSerialisationRequest = null
         node.serialisationRequestBusy = null
-
-        node.initialised = false
+        node.postponeSerialisation = true
 
         setInterval(async function () {
             if (node.serialisationRequestBusy) return
             if (node.queuedSerialisationRequest) {
                 node.serialisationRequestBusy = node.queuedSerialisationRequest
+                console.log('interval-serialise')
                 await serialise()
                 node.queuedSerialisationRequest = null
                 node.serialisationRequestBusy = null
@@ -1461,7 +1461,7 @@ module.exports = function (RED) {
                         })
                         .start()
                 }
-                node.initialised = true
+                node.postponeSerialisation = false
             } catch (err) {
                 if (node.tasks) {
                     node.tasks.forEach(task => task.stop())
@@ -1473,10 +1473,12 @@ module.exports = function (RED) {
 
         node.on('close', async function (done) {
             try {
-                // await serialise()
+                console.log('close-serializing')
+                await serialise()
             } catch (error) {
                 node.error(error)
             }
+            node.postponeSerialisation = true
             deleteAllTasks(this)
             if (clockMonitor) clearInterval(clockMonitor)
             if (done && typeof done === 'function') done()
@@ -1903,7 +1905,9 @@ module.exports = function (RED) {
                             }
                         }
                         // eslint-disable-next-line no-empty
-                    } catch (error) { }
+                    } catch (error) {
+                        console.log('deleteAllTasks', error)
+                    }
                 }
             }
         }
@@ -2282,6 +2286,7 @@ module.exports = function (RED) {
 
                         updateSchedule(node, task.name, task, props, true, 'stop')
                     }
+                    console.log('stop-requestSerialisation')
                     requestSerialisation()// request persistent state be written
                 })
             task.stop()// prevent bug where calling start without first calling stop causes events to bunch up
@@ -2292,7 +2297,12 @@ module.exports = function (RED) {
             return task
         }
         function requestSerialisation () {
-            if (node.serialisationRequestBusy || node.initialised === false) {
+            if (node.serialisationRequestBusy || node.postponeSerialisation) {
+                if (node.postponeSerialisation) {
+                    console.log('postpone serialisation')
+                } else {
+                    console.log('busy')
+                }
                 return
             }
             node.queuedSerialisationRequest = Date.now()
@@ -2323,6 +2333,7 @@ module.exports = function (RED) {
                     dynamicSchedules: dynNodesExp,
                     staticSchedules: statNodesExp
                 }
+                console.log('state', state)
                 if (node.storeName === 'NONE') {
                     return
                 }
@@ -2373,10 +2384,8 @@ module.exports = function (RED) {
                 }
 
                 const restoreState = async (state) => {
-                    node.warn(`scheduler: Loading state: ${state}`)
                     if (!state) {
                         sendSchedules()
-                        node.warn('scheduler: No state to load')
                         return // nothing to add
                     }
                     if (state.staticSchedules && state.staticSchedules.length) {
@@ -2434,7 +2443,6 @@ module.exports = function (RED) {
                 }
                 if (node.storeName === 'NONE') {
                     sendSchedules()
-                    node.warn('scheduler: No state to load')
                     return
                 }
                 if (node.storeName === 'local_file_system') {
@@ -2444,7 +2452,6 @@ module.exports = function (RED) {
                         const state = JSON.parse(fileData)
                         await restoreState(state)
                     } else {
-                        node.warn('scheduler: No state to load')
                         sendSchedules()
                         RED.log.debug(`scheduler: no persistence data found for node '${node.id}'.`)
                     }
