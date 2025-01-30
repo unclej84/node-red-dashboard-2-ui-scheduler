@@ -1394,7 +1394,8 @@ export default {
             if (item.name) {
                 this.$socket.emit('widget-action', this.id, {
                     action: 'setEnabled',
-                    payload: { name: item.name, enabled }
+                    payload: { name: item.name, enabled },
+                    topic: item.topics
                 })
             }
         },
@@ -1405,7 +1406,8 @@ export default {
             if (names.length > 0) {
                 this.$socket.emit('widget-action', this.id, {
                     action: 'setEnabled',
-                    payload: { names, enabled }
+                    payload: { names, enabled, all: true },
+                    topic: this.selectedTopic
                 })
             }
         },
@@ -1464,7 +1466,7 @@ export default {
         },
 
         resetForm () {
-            const baseName = 'New Schedule'
+            const baseName = 'Schedule'
             let newName = baseName
             let index = 2
 
