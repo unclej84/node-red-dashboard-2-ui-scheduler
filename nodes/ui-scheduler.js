@@ -217,7 +217,7 @@ function validateOpt (opt, permitDefaults = true) {
     if (!opt.payloadType === 'default' && opt.payload === null) {
         throw new Error(`Schedule '${opt.name}' - payload property missing`)
     }
-    const okTypes = ['default', 'flow', 'global', 'str', 'num', 'bool', 'json', 'jsonata', 'bin', 'date', 'env']
+    const okTypes = ['default', 'flow', 'global', 'str', 'num', 'bool', 'json', 'jsonata', 'bin', 'date', 'env', 'custom']
     // eslint-disable-next-line eqeqeq
     const typeOK = okTypes.find(el => { return el == opt.payloadType })
     if (!typeOK) {
@@ -1063,6 +1063,7 @@ module.exports = function (RED) {
         node.sendActiveState = config.sendActiveState
         node.sendInactiveState = config.sendInactiveState
         node.topics = config.topics || ['Topic 1']
+        node.customPayloads = config.customPayloads || []
         node.fanOut = false
 
         node.queuedSerialisationRequest = null
@@ -1073,7 +1074,6 @@ module.exports = function (RED) {
             if (node.serialisationRequestBusy) return
             if (node.queuedSerialisationRequest) {
                 node.serialisationRequestBusy = node.queuedSerialisationRequest
-                console.log('interval-serialise')
                 await serialise()
                 node.queuedSerialisationRequest = null
                 node.serialisationRequestBusy = null
@@ -1368,6 +1368,9 @@ module.exports = function (RED) {
                         pl = task.node_payload
                     } else if (task.node_payloadType === 'bin' && Array.isArray(task.node_payload)) {
                         pl = Buffer.from(task.node_payload)
+                    } else if (task.node_payloadType === 'custom' && task.node_payload) {
+                        const customPayload = node.customPayloads.find(payload => payload.id === task.node_payload)
+                        pl = customPayload ? customPayload.value : ''
                     } else if (task.node_payloadType === 'default') {
                         pl = msg.scheduler
                         delete msg.scheduler // To delete or not?
@@ -1473,7 +1476,6 @@ module.exports = function (RED) {
 
         node.on('close', async function (done) {
             try {
-                console.log('close-serializing')
                 await serialise()
             } catch (error) {
                 node.error(error)
@@ -2286,7 +2288,6 @@ module.exports = function (RED) {
 
                         updateSchedule(node, task.name, task, props, true, 'stop')
                     }
-                    console.log('stop-requestSerialisation')
                     requestSerialisation()// request persistent state be written
                 })
             task.stop()// prevent bug where calling start without first calling stop causes events to bunch up
@@ -2298,11 +2299,6 @@ module.exports = function (RED) {
         }
         function requestSerialisation () {
             if (node.serialisationRequestBusy || node.postponeSerialisation) {
-                if (node.postponeSerialisation) {
-                    console.log('postpone serialisation')
-                } else {
-                    console.log('busy')
-                }
                 return
             }
             node.queuedSerialisationRequest = Date.now()
@@ -2333,7 +2329,6 @@ module.exports = function (RED) {
                     dynamicSchedules: dynNodesExp,
                     staticSchedules: statNodesExp
                 }
-                console.log('state', state)
                 if (node.storeName === 'NONE') {
                     return
                 }
@@ -2680,25 +2675,45 @@ module.exports = function (RED) {
                                 startCronExpression = '0 0 31 2 ? *' // Default to never
                             }
 
+                            // Helper function to determine payload and payloadType
+                            function getPayloadAndType (valueKey, defaultValue) {
+                                if (schedule?.payloadType === 'custom') {
+                                    return {
+                                        payload: schedule[valueKey] ?? defaultValue,
+                                        payloadType: 'custom'
+                                    }
+                                } else {
+                                    return {
+                                        payload: schedule[valueKey] ?? defaultValue,
+                                        payloadType: 'bool'
+                                    }
+                                }
+                            }
+
+                            // Determine payloads and payloadTypes for start and end commands
+                            const { payload: startPayload, payloadType: startPayloadType } = getPayloadAndType('payloadValue', true)
+                            const { payload: endPayload, payloadType: endPayloadType } = getPayloadAndType('endPayloadValue', false)
+
+                            // Construct startCmd
                             const startCmd = {
                                 command: 'add',
                                 name: schedule.name,
                                 topic: schedule.topic,
                                 expression: startCronExpression,
                                 expressionType: 'cron',
-                                payload: schedule?.payloadValue || true,
-                                payloadType: 'bool',
+                                payload: startPayload,
+                                payloadType: startPayloadType,
                                 schedule,
                                 dontStartTheTask: !schedule.enabled
                             }
 
+                            // Construct endCmd
                             const endCmd = {
                                 ...startCmd,
                                 name: `${schedule.name}_end_sched_type`,
-                                topic: schedule.topic,
                                 expression: endCronExpression,
-                                payload: schedule?.endPayloadValue || false,
-                                payloadType: 'bool',
+                                payload: endPayload,
+                                payloadType: endPayloadType,
                                 schedule: null,
                                 scheduleName: schedule.name,
                                 endSchedule: true
