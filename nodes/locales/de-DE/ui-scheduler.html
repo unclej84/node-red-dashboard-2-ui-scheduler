@@ -1,0 +1,527 @@
+<script type="text/html" data-help-name="ui-scheduler">
+    <style>
+        .ui-scheduler-link-button {
+            background: none!important;
+            border: none!important;
+            padding: 0!important;
+            cursor: pointer!important;
+            color: var(--red-ui-primary-text-color);
+        }
+        pre.ui-scheduler-code button.ui-scheduler-copy-button {
+            position: absolute;
+            padding: 2px;
+            background-color: var(--red-ui-primary-text-color);
+            color: var(--red-ui-primary-background);
+            border: ridge 1px var(--red-ui-secondary-text-color);
+            border-radius: 15px;
+            opacity: 0.35;
+            top: 0px;
+            right: 4px;
+            scale: 70%;
+            transform-origin: right;
+        }
+        pre.ui-scheduler-code button.ui-scheduler-copy-button:hover{
+            cursor: pointer;
+            opacity: 0.9;
+        }
+        .red-ui-help pre.ui-scheduler-code {
+            position: relative;
+        }
+</style>
+    <p>Planen Sie die Einspeisung einer Nutzlast, um einen Ablauf zu starten <span style="float: right"><button class="ui-scheduler-link-button" onclick="_popoutui-schedulerHelp()">ausklappen <i class="fa fa-external-link"></i></button></span></p>
+    <h3>Eigenschaften</h3>
+    <dl class="message-properties">
+        <h4>Zeitzone (optional)</h4>
+        <div style="padding-left: 15px">
+            Eine zu verwendende Zeitzone. Lassen Sie dieses Feld leer, um die Systemzeitzone zu verwenden. Alternativ können Sie UTC oder eine Zeitzone im Format Region/Area eingeben (<a target="_blank" href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">Liste</a>)
+            <br>
+            TIPP: Die Zeitzone sollte aus Ihrer eigenen Perspektive wahrgenommen werden. Siehe das Beispiel <a href="#understanding-timezone">Zeitzonenverständnis</a> unten.
+        </div>
+        <h4>24-Stunden-Format</h4>
+        <div style="padding-left: 15px">
+            Legt fest, welches Zeitformat zur Anzeige der Zeit verwendet wird. Wenn auf <code>true</code> gesetzt, wird die Zeit im 24-Stunden-Format angezeigt. Wenn auf <code>false</code> gesetzt, wird die Zeit im 12-Stunden-Format angezeigt.
+        </div>    
+        <h4>Standort (optional)</h4>
+        <div style="padding-left: 15px">
+            Hier können Sie wählen, einen gemeinsamen Standort für alle Sonnenereignisse festzulegen (optional).
+        </div>    
+        <h4>Ausgänge</h4>
+        <div style="padding-left: 15px">
+            <ul>
+                <li>1 Ausgang: Alle Nachrichten an Ausgang 1 (Zeitpläne + Befehlsantworten)</li>
+                <li>2 Ausgänge: Befehlsantworten an Ausgang 1, Zeitplannachrichten an Ausgang 2</li>
+                <li>Fan-out: Separate Ausgänge für Befehlsnachrichten und jedes Thema</li>
+            </ul>
+        </div>
+        <h4>Zustand der Zeitpläne senden</h4>
+        <div style="padding-left: 15px">
+            Senden Sie den aktuellen Zustand der aktivierten Zeitpläne mit einem Zeitraum an den Ausgang. Dies ist nach Thema gruppiert. Wenn also zwei Zeitpläne für dasselbe Thema <code>aktiv</code> sind (im Bereich der Start- und Endzeiten), wird nur eine Nachricht mit Nutzlast <code>true</code> gesendet.
+            Ebenso, wenn ein Zeitplan für ein Thema <code>inaktiv</code> ist und der andere <code>aktiv</code>, wird nur eine Nachricht mit Nutzlast <code>true</code> gesendet.
+            Wenn beide Zeitpläne <code>inaktiv</code> sind, wird nur eine Nachricht mit Nutzlast <code>false</code> gesendet.
+            <ul>
+                <li>Intervall: Legen Sie das Intervall in Sekunden zwischen den Nachrichten fest</li>
+                <li>Aktiver Zustand: Senden Sie eine Nachricht mit Nutzlast <code>true</code>, wenn ein Zeitplan aktiv ist</li>
+                <li>Inaktiver Zustand: Senden Sie eine Nachricht mit Nutzlast <code>false</code>, wenn alle Zeitpläne inaktiv sind</li>
+            </ul>
+        </div>    
+        <h4>Zeitpläne speichern</h4>
+        <div style="padding-left: 15px">
+            Legen Sie fest, ob die Zeitpläne auf der Festplatte oder im Speicher gespeichert werden sollen.
+            <ul>
+                <li>Keine: Speichern Sie keine Zeitpläne. Die Zeitpläne gehen verloren, wenn der Knoten neu bereitgestellt wird</li>
+                <li>Lokales Dateisystem: Speichern Sie Zeitpläne im lokalen Dateisystem. Die Zeitpläne werden in einem Verzeichnis namens <code>schedulerdata</code> in Ihrem node-red-Ordner gespeichert</li>
+                <li>Node Context Stores: Speichern Sie Zeitpläne im Knoten-Kontext. Diese Speicher werden automatisch aus Ihrer node-red-Einstellungsdatei geladen. Weitere Informationen finden Sie in der <a href="https://nodered.org/docs/user-guide/context">Node-RED-Kontext</a>-Dokumentation.</li>
+            </ul>
+        </div>
+        <h4>Themen</h4>
+        <div style="padding-left: 15px">
+            Eine Tabelle vordefinierter Themen. Diese Themen können im Feld <code>Thema</code> der Zeitpläne verwendet werden und können in der Node-Red Dashboard 2.0 UI ausgewählt werden.
+            Im Fan-out-Modus werden Zeitplannachrichten an den entsprechenden Ausgang gesendet.
+        </div>    
+        <h4>Zeitpläne</h4>
+        <div style="padding-left: 15px">
+            Eine Tabelle der Zeitpläne. Hier eingetragene Einträge gelten als statisch und werden neu geladen, wenn node-red startet oder der ui-scheduler-Knoten (neu) bereitgestellt wird. 
+            Diese können nicht in der Node-Red Dashboard 2.0 UI bearbeitet werden.
+        </div>
+        <h4>Zeitpläne - Name</h4>
+        <div style="padding-left: 15px">
+            Der Name wird verwendet, um den Zeitplan zu identifizieren. Dynamische Anpassungen an einem einzelnen Zeitplan müssen diesen Namen angeben.
+        </div>
+        <h4>Zeitpläne - Thema</h4>
+        <div style="padding-left: 15px">
+            Das Thema wird in <code>msg.topic</code> gesendet, wenn der Zeitplan ausgelöst wird. Dies ermöglicht es dem Ablauf, auf den ausgelösten Zeitplan zu reagieren. Themen werden in der obigen Konfiguration definiert. 
+        </div>
+        <h4>Zeitpläne - Nutzlast</h4>
+        <div style="padding-left: 15px">
+            Der Wert, der in der Nutzlast gesendet wird, wenn der Zeitplan ausgelöst wird. (HINWEIS: Die Eigenschaft, an die die Nutzlast geschrieben wird, wird durch die "Ausgabe-Eigenschaft" bestimmt).
+        </div>
+        <h4>Zeitpläne - Typ</h4>
+        <div style="padding-left: 15px">
+            Der Typ bestimmt, welche Art von Zeitplan verwendet wird. Optionen sind <code>cron</code>, <code>Datumsequenz</code> oder <code>Sonnenereignisse</code>.
+        </div>
+        <h4 id="ui-scheduler-expression-info">Zeitpläne - Ausdruck</h4>
+        <div style="padding-left: 15px">
+            <i>HINWEIS: Nur angezeigt, wenn der Typ auf <b>cron</b> oder <b>Datumsequenz</b> eingestellt ist</i><br>
+            Ein CRON-Ausdruck, ein Datum, eine durch Kommas getrennte Liste von Daten oder ein Array von Daten<br><br>
+            <p> Datums- oder Datumsequenzformat...<br>
+                Wenn Sie ein festes Datum oder eine Sequenz von Daten verwenden möchten, kann der Ausdruck ein Datumsstring, eine durch Kommas getrennte Liste von Daten oder ein Array von Daten sein (Das Array kann eine Mischung aus Zeichenketten, Datum-Objekten und Zeitstempeln enthalten).
+                Bei der Angabe eines Datumsstrings können Sie die Zeitzone verwenden, z. B. "2020-01-01 00:00 GMT+2".
+                Sie können sogar Zeitzonen mischen, z. B. "2020-01-01 00:00 GMT+2, 2020-01-01 00:00 GMT-7".
+            </p>
+            <p>CRON-Format...</p>
+            <pre style="white-space: pre; padding: 0px; font-size: smaller;"> * * * * * * *    Feld               Erlaubte Werte    Spezielle Symbole
+ | | | | | | |    -----------------  ---------------   ---------------
+ `-|-|-|-|-|-|->  Sekunde (optional) 0-59              * / , -
+   `-|-|-|-|-|->  Minute             0-59              * / , -
+     `-|-|-|-|->  Stunde             0-23              * / , -
+       `-|-|-|->  Tag des Monats     1-31              * / , - ? L W
+         `-|-|->  Monat              1-12 oder JAN-DEC * / , -
+           `-|->  Wochentag          0-7 oder SO-SA    * / , - ? L #
+             `->  Jahr (optional)    1970-2099         * / , -</pre>
+            <p>Hinweise...</p>
+            <ul>
+                <li><code>*</code> Sternchen geben an, dass der cron-Ausdruck für alle Werte des Feldes übereinstimmt. Zum Beispiel bedeutet "*" im Minutenfeld jede Minute</li>
+                <li><code>?</code> Fragezeichen werden verwendet, um 'keinen bestimmten Wert' anzugeben und sind für die Felder Tag-des-Monats und Wochentag zulässig. Es wird anstelle des Sternchens (*) verwendet, um entweder Tag-des-Monats oder Wochentag freizulassen.</li>
+                <li><code>-</code> Bindestriche werden verwendet, um Bereiche zu definieren. Zum Beispiel bedeutet "10-12" im Stundenfeld die Stunden 10, 11 und 12.</li>
+                <li><code>,</code> Kommas werden verwendet, um Listenelemente zu trennen. Zum Beispiel bedeutet "MON, WED, FRI" im Wochentagsfeld die Tage Montag, Mittwoch und Freitag.</li>
+                <li><code>/</code> Schrägstriche werden verwendet, um Inkremente anzugeben. Zum Beispiel bedeutet "0/15" im Sekundenfeld die Sekunden 0, 15, 30 und 45. Außerdem bedeutet "1/3" im Tag-des-Monats-Feld alle 3 Tage, beginnend am ersten Tag des Monats.</li>
+                <li><code>L</code> Kurzform für "letzter" und ist für die Felder Tag-des-Monats und Wochentag zulässig. Das "L"-Zeichen hat in jedem der beiden Felder eine andere Bedeutung. Zum Beispiel bedeutet "L" im Tag-des-Monats-Feld der letzte Tag des Monats. Wenn es im Wochentagsfeld verwendet wird, bedeutet es 7 oder SA. Wird es jedoch im Wochentagsfeld nach einem anderen Wert verwendet, bedeutet es der letzte xxx-Tag des Monats. Zum Beispiel bedeutet "6L" im Wochentagsfeld der letzte Freitag des Monats</li>
+                <li><code>W</code> Kurzform für "Wochentag" und ist für das Tag-des-Monats-Feld zulässig. Das "W"-Zeichen wird verwendet, um den Wochentag in der Nähe des angegebenen Tages anzugeben. Zum Beispiel bedeutet "15W" im Tag-des-Monats-Feld den nächstgelegenen Wochentag zum 15. des Monats. Wenn der 15. ein Samstag ist, läuft der Job am Freitag, den 14. Die "L"- und "W"-Zeichen können im Tag-des-Monats-Feld kombiniert werden. Zum Beispiel bedeutet "LW" der letzte Wochentag des Monats.</li>
+                <li><code>#</code> Die Rautezeichen geben Konstrukte an. Zum Beispiel bedeutet "6#3" im Wochentagsfeld der dritte Freitag des Monats.</li>
+            </ul>        
+            <p>Beispiele...</p>
+            <ul>
+                <li><code>* * * * * *</code> Jede Sekunde</li>
+                <li><code>0 * * * * *</code> Jede Minute</li>
+                <li><code>0 */10 * * * *</code> Alle 10 Minuten</li>
+                <li><code>0 */20 1 * * *</code> Alle 20 Minuten zwischen 01:00 Uhr und 01:59 Uhr</li>
+                <li><code>0 15,30,45 * * * *</code> Um 15, 30 und 45 Minuten nach der vollen Stunde</li>
+                <li><code>0 0 12 * * *</code> Jeden Tag um Mittag - 12 Uhr</li>
+                <li><code>0 0 2 29 FEB * 2020/4</code> Um 02:00 Uhr am Tag 29. Februar (Schaltjahre)</li>
+                <li><code>0 0 7 * * MON#1 *</code> Um 07:00 Uhr am ersten Montag des Monats</li>
+                <li><code>0 0 12 * JAN,FEB,MAR,APR *</code> Jeden Tag um Mittag in Januar, Februar, März und April</li>
+                <li><code>* * 1W * *</code> Jede Minute am ersten Wochentag des Monats</li>
+                <li><code>* * * * Tue#3</code> Jede Minute am dritten Dienstag des Monats</li>
+                <li><code>0 12 * * MONL</code> Um 12:00 Uhr am letzten Montag des Monats</li>
+                <li>Siehe <a href="https://github.com/jaclarke/cronosjs">hier</a> für weitere Beispiele und Infos</li>
+            </ul>        
+        </div>
+        <h4 id="ui-scheduler-solar-events-info">Zeitpläne - Sonnenereignisse</h4>
+        <div style="padding-left: 15px">
+            <i>HINWEIS: Nur angezeigt, wenn der Typ auf <b>Sonnenereignisse</b> eingestellt ist</i><br>
+            Das Feld Sonnenereignisse ermöglicht es Ihnen, auszuwählen, bei welchen Sonnenereignissen ein Zeitplan ausgelöst werden soll.<br>
+            Sonnenereignisse...
+            <table class="ui-scheduler-solar-events-table">
+                <tr><th>Ereignis-ID</th><th>Ereignis</th><th>Informationen</th></tr>
+                <tr><td>nightEnd</td><td>Nachtende / astronomische Morgendämmerung</td><td>Die Nacht endet, die astronomische Dämmerung beginnt (-18°)</td></tr>
+                <!-- <tr><td>astronomicalDawn</td><td>astronomische Morgendämmerung</td><td>Die Nacht endet, die astronomische Dämmerung beginnt (-18°)")</td></tr> -->
+                <tr><td>nauticalDawn</td><td>nautische Morgendämmerung</td><td>Die astronomische Dämmerung endet, die nautische Dämmerung beginnt (-12°)</td></tr>
+                <tr><td>civilDawn</td><td>bürgerliche Morgendämmerung / goldene Stunde</td><td>Die nautische Dämmerung endet, die bürgerliche Dämmerung und die goldene Stunde beginnen (-6°)</td></tr>
+                <!-- <tr><td>morningGoldenHourStart</td><td>Beginn der goldenen Stunde</td><td>wenn die Sonne 6 Grad unter dem Horizont steht (-6°)")</td></tr> -->
+                <tr><td>sunrise</td><td>Sonnenaufgang</td><td>Der obere Rand der Sonne erscheint am Horizont (-0,833°)</td></tr>
+                <tr><td>sunriseEnd</td><td>Ende des Sonnenaufgangs</td><td>Der untere Rand der Sonne berührt den Horizont (-0,3°)</td></tr>
+                <tr><td>morningGoldenHourEnd</td><td>Ende der morgendlichen goldenen Stunde</td><td>wenn die Sonne 6 Grad über dem Horizont steht (6°)</td></tr>
+                <tr><td>solarNoon</td><td>Sonnenhöchststand</td><td>Die Sonne steht an ihrem höchsten Punkt</td></tr>
+                <tr><td>eveningGoldenHourStart</td><td>Beginn der abendlichen goldenen Stunde</td><td>wenn die Sonne 6 Grad über dem Horizont steht (6°)</td></tr>
+                <tr><td>sunsetStart</td><td>Beginn des Sonnenuntergangs</td><td>Der untere Rand der Sonne berührt den Horizont (-0,3°)</td></tr>
+                <tr><td>sunset</td><td>Sonnenuntergang</td><td>Die bürgerliche Dämmerung beginnt, die Sonne verschwindet unter dem Horizont (-0,833°)</td></tr>
+                <!-- <tr><td>eveningGoldenHourEnd</td><td>Ende der abendlichen goldenen Stunde</td><td>goldene Stunde endet (-6°)")</td></tr> -->
+                <tr><td>civilDusk</td><td>bürgerliche Dämmerung / Ende der goldenen Stunde</td><td>Die bürgerliche Dämmerung und die goldene Stunde enden, die nautische Dämmerung beginnt (-6°)</td></tr>
+                <tr><td>nauticalDusk</td><td>nautische Dämmerung</td><td>Die nautische Dämmerung endet, die astronomische Dämmerung beginnt (-12°)</td></tr>
+                <!-- <tr><td>astronomicalDusk</td><td>astronomische Dämmerung</td><td>Die astronomische Dämmerung endet, die Nacht beginnt (-18°)</td></tr> -->
+                <tr><td>nightStart</td><td>astronomische Dämmerung / Beginn der Nacht</td><td>Die astronomische Dämmerung endet, die Nacht beginnt (-18°)</td></tr>
+                <tr><td>nadir</td><td>Solarmitternacht</td><td>wenn die Sonne dem Nadir am nächsten ist und die Nacht gleich weit von der Dämmerung und Morgendämmerung entfernt ist</td></tr>
+            </table>
+        </div>
+        <h4>Zeitpläne - Standort</h4>
+        <div style="padding-left: 15px">
+            <i>HINWEIS: Nur angezeigt, wenn der Typ auf <b>Sonnenereignisse</b> eingestellt ist</i><br>
+            Das Feld Standort soll Längen- und Breitengradkoordinaten für die Berechnung von Sonnenereignissen enthalten.<br>
+            Akzeptierte Formate...
+            <ul>
+                <li>Dezimalgrade z. B.: <code class="ui-scheduler-coordinates">54.9992500,-1.4170300</code> oder <code class="ui-scheduler-coordinates">54.9992500° N 1.4170300° W</code></li>
+                <li>Grad Minuten Sekunden z. B.: <code class="ui-scheduler-coordinates">54° 59' 57.3'' N 1° 25' 1.308'' W</code></li>
+                <li>Dezimalminuten z. B.: <code class="ui-scheduler-coordinates">54° 59.955' , -1° 25.0218'</code></li>
+                <li>GPS z. B.: <code class="ui-scheduler-coordinates">N54°59'57.3, W1°25'1.308"</code>, <code class="ui-scheduler-coordinates">54°59'57.3"N, 1°25'1.308"W</code>, <code class="ui-scheduler-coordinates">54d 59' 57" N 1d 25' 1" W</code> oder <code class="ui-scheduler-coordinates">54:59:57.3N 1:25:1.308W</code></li>
+            </ul>
+        </div>        
+        <h4>Zeitpläne - Versatz</h4>
+        <div style="padding-left: 15px">
+            <i>HINWEIS: Nur angezeigt, wenn der Typ auf <b>Sonnenereignisse</b> eingestellt ist</i><br>
+            Das Feld Versatz kann verwendet werden, um einen positiven oder negativen Versatz in Minuten zur Sonnenaufgangs- oder Sonnenuntergangszeit hinzuzufügen.
+        </div>        
+
+    </dl>
+    <h3>Ausgabe</h3>
+    <dl class="message-properties">
+        <dt><i>payload (siehe 'Ausgabeeigenschaft')</i> <span class="property-type">number|string|boolean|object|buffer</span></dt>
+        <dd>msg.[Ausgabeeigenschaft] enthält das, was in 'payload' konfiguriert ist</dd>
+        <dd>z. B. wenn 'Ausgabeeigenschaft' auf <b>data.value</b> eingestellt ist, enthält <code>msg.data.value</code> den Wert der <i>payload</i></dd>
+        <dd>msg.topic enthält den Namen des Themas. Dies vereinfacht die Trennung, welcher Zeitplan ausgelöst wurde</dd>
+        <dd>Zusätzliche Eigenschaften werden ebenfalls dem msg-Objekt hinzugefügt. Überprüfen Sie die Debug-Ausgabe (verwenden Sie vollständige msg anzeigen)</dd>
+    </dl>
+
+  <h4>Ausgabeeigenschaft</h4>
+    <div style="padding-left: 15px">
+        Die <code>msg.</code> Eigenschaft, an die die Nutzlast gesendet werden soll. Typischerweise wäre dies die Nutzlast.
+    </div>
+
+    <!-- <h3>Eingaben <i>(Erweiterte Verwendung)</i></h3>
+    <dl class="message-properties">
+        <dt><i>Thema</i> <span class="property-type">string</span></dt>
+        <dd>Die meisten Befehle können im Thema mit dem Namen des Zeitplans in der Nutzlast bereitgestellt werden (falls zutreffend). <br>Unterstützte Befehlsthemen... 
+                    <ul>
+                        <li>trigger</li>
+                        <li>status</li>
+                        <li>export</li>
+                        <li>remove</li>
+                        <li>pause</li>
+                        <li>stop</li>
+                        <li>start</li>
+            </ul>
+            Dazu gehören die <code>-all</code>, <code>-all-dynamic</code>, <code>-all-static</code>, <code>-active</code>,  <code>-active-dynamic</code>,  <code>-active-static</code>, <code>-inactive</code>, <code>-inactive-dynamic</code> und <code>-inactive-static</code> Befehlsthemen (z. B. export-all, stop-all-dynamic, start-all-static, remove-inactive-dynamic)<br>
+            Siehe <a href="#ui-scheduler-commands-info">Befehle</a> unten für Details.
+        </dd>
+    </dl>
+    <dl class="message-properties">
+        <dt><i>Nutzlast</i> <span class="property-type">string|object|Array</span></dt>
+        <dd>Es ist möglich, Zeitpläne dynamisch hinzuzufügen, zu entfernen und zu steuern, indem eine Nutzlast in den Knoten injiziert wird. Das Format des Nutzlastobjekts (oder Arrays von Objekten) hängt von der Operation ab. Siehe unten für Details.</dd>
+        <dd>
+            <p><b>Hinzufügen eines (oder mehrerer) Zeitpläne</b><br>
+                Beispiel...<br>
+                <pre class="ui-scheduler-code"><code>payload: [
+  {
+    "command": "add",
+    "name": "alle 6",
+    "expression": "*/6 * * * * * *",
+    "expressionType": "cron",
+    "payloadType": "default",
+    "limit": 3 
+  },
+  {
+    "command": "add",
+    "name": "Silvester 2030",
+    "expression": "2030-01-01",
+    "expressionType": "dates",
+    "payloadType": "default"
+  },
+  {
+    "command": "add",
+    "name": "alarm1",
+    "expressionType": "solar",
+    "solarType": "selected",
+    "solarEvents": "civilDawn,sunrise,sunset",
+    "location": "54.999320540937035 -1.417407989501953",
+    "offset": "-60",
+    "payloadType": "str",
+    "payload": "In 60 mins, it will be a great time to take photographs",
+    "limit": null
+  }
+]</code></pre>
+
+<p><i>Details...</i><br>
+                    Hinzufügen eines CRON-Ausdrucks
+                    <ul>
+                        <li>Mehrere Zeitpläne können hinzugefügt werden, wenn die Nutzlast ein Array von Objekten ist</li>
+                        <li>Befehl: (string|erforderlich) Die auszuführende Operation - in diesem Fall "add"</li>
+                        <li>Name: (string|erforderlich) Dies wird den Zeitplan identifizieren</li>
+                        <li>Thema: (string|erforderlich) Dies wird als Thema verwendet, wenn der Zeitplan ausgelöst wird</li>
+                        <li>Ausdruck: (string|erforderlich) Ein CRON-Ausdruck, ein Datum, eine durch Kommas getrennte Liste von Daten oder ein Array von Daten</li>
+                        <li>Ausdruckstyp: (string|optional) Geben Sie den Zeitplantyp an. (Wenn weggelassen, ist "cron" der Standard)</li>
+                        <li>Nutzlasttyp: (string|optional) Der Nutzlasttyp (z. B. 'default', 'flow', 'global', 'str', 'num', 'bool', 'json', 'bin', 'date' oder 'env')</li>
+                        <li>Nutzlast: (any|optional) Was gesendet werden soll, wenn der Zeitplan ausgelöst wird</li>
+                        <li>Limit: (number|optional) Maximale Anzahl, wie oft der Zeitplan ausgelöst werden soll</li>
+                    </ul><br>
+                    Hinzufügen einer Datumssequenz
+                    <ul>
+                        <li>Mehrere Zeitpläne können hinzugefügt werden, wenn die Nutzlast ein Array von Objekten ist</li>
+                        <li>Befehl: (string|erforderlich) Die auszuführende Operation - in diesem Fall "add"</li>
+                        <li>Name: (string|erforderlich) Dies wird den Zeitplan identifizieren</li>
+                        <li>Thema: (string|erforderlich) Dies wird als Thema verwendet, wenn der Zeitplan ausgelöst wird</li>
+                        <li>Ausdruck: (string|Array|erforderlich) Ein Datum, eine durch Kommas getrennte Liste von Daten oder ein Array von Daten</li>
+                        <li>Ausdruckstyp: (string|erforderlich) Geben Sie den Zeitplantyp an - in diesem Fall "dates"</li>
+                        <li>Nutzlasttyp: (string|optional) Der Nutzlasttyp (z. B. 'default', 'flow', 'global', 'str', 'num', 'bool', 'json', 'bin', 'date' oder 'env')</li>
+                        <li>Nutzlast: (any|optional) Was gesendet werden soll, wenn der Zeitplan ausgelöst wird</li>
+                        <li>Limit: (number|optional) Maximale Anzahl, wie oft der Zeitplan ausgelöst werden soll</li>
+                    </ul><br>
+                    Hinzufügen eines Sonnenereignis-Zeitplans
+                    <ul>
+                        <li>Mehrere Zeitpläne können hinzugefügt werden, wenn die Nutzlast ein Array von Objekten ist</li>
+                        <li>Befehl: (string|erforderlich) Die auszuführende Operation - in diesem Fall "add"</li>
+                        <li>Name: (string|erforderlich) Dies wird den Zeitplan identifizieren</li>
+                        <li>Thema: (string|erforderlich) Dies wird als Thema verwendet, wenn der Zeitplan ausgelöst wird</li>
+                        <li>Ausdruckstyp: (string|erforderlich) Geben Sie den Zeitplantyp an. Auf "solar" für Sonnenereignisse einstellen</li>
+                        <li>Sonnentyp: (string|erforderlich) Geben Sie die Ereignisse an, die ausgelöst werden sollen. Akzeptierte Werte sind "all" oder "selected"</li>
+                        <li>Sonnenereignisse: (string|optional) Geben Sie die Ereignisse an, die ausgelöst werden sollen. Nur erforderlich, wenn solarType == "selected". Akzeptierte Werte sind unter <b>Zeitpläne - Sonnenereignisse</b> <a href="#ui-scheduler-solar-events-info">siehe oben</a> aufgeführt </li>
+                        <li>Standort: (string|erforderlich) Längen- und Breitengrade, DNS, DMM oder GPS-Koordinaten für Sonnenaufgang oder Sonnenuntergang</li>
+                        <li>Versatz: (number|optional) Anzahl der Minuten, um einen Sonnenaufgang oder Sonnenuntergang zu verschieben</li>
+                        <li>Nutzlasttyp: (string|optional) Der Nutzlasttyp (z. B. 'default', 'flow', 'global', 'str', 'num', 'bool', 'json', 'bin', 'date' oder 'env')</li>
+                        <li>Nutzlast: (any|optional) Was gesendet werden soll, wenn der Zeitplan ausgelöst wird</li>
+                        <li>Limit: (number|optional) Maximale Anzahl, wie oft der Zeitplan ausgelöst werden soll</li>
+                    </ul>
+                </p>
+            </p>
+            <p><i>Hinweise...</i><br>
+                <ul>
+                    <li>Diese Option hat keine Ausgabe.</li>
+                </ul>
+            </p> -->
+
+            <p id="ui-scheduler-commands-info"><b>Den Status eines Zeitplans abrufen oder einen Zeitplan entfernen / stoppen / pausieren / starten</b><br><br>
+                Themenmethode...<br>
+                <pre class="ui-scheduler-code"><code>msg.topic = "command"; // Befehlname - *siehe Details unten*,
+msg.payload = "name"; //  Name des Zeitplans</code></pre>
+                Nutzlastmethode...<br>
+                <pre class="ui-scheduler-code"><code>payload: {
+  "command": "*siehe Details unten*",
+  "name": "* Name des Zeitplans",
+}</code></pre>
+<p><i>Details...</i><br>
+                    <ul>
+                        <li>Befehl: (string|erforderlich) Die auszuführende Operation - dies kann eine der folgenden sein...
+                            <ul>
+                                <li>"trigger"</li>
+                                <li>"status"</li>
+                                <li>"export"</li>
+                                <li>"remove"</li>
+                                <li>"stop"</li>
+                                <li>"pause"</li>
+                                <li>"start"</li>
+                            </ul>
+                        </li>
+                        <li>Name: (string|optional) Der Name des zu beeinflussenden Zeitplans (nicht erforderlich bei Verwendung der Filter -all, -active oder -inactive)</li>
+                    </ul>
+                </p>
+                <p><i>Hinweise...</i><br>
+                    <ul>
+                        <li><code>trigger</code> löst den im <code>msg.payload</code> genannten Zeitplan aus</li>
+                        <li><code>status</code> gibt ein Objekt mit der Konfiguration und dem Status des genannten Zeitplans zurück</li>
+                        <li><code>export</code> gibt ein Objekt mit der Konfiguration des genannten Zeitplans zurück</li>
+                        <li><code>remove</code> wird den Zeitplan stoppen und entfernen. Diese Option hat keine Ausgabe.</li>
+                        <li><code>stop</code> wird den angegebenen Zeitplan <code>name</code> stoppen und seinen internen Zähler zurücksetzen. Diese Option hat keine Ausgabe.</li>
+                        <li><code>pause</code> wird den angegebenen Zeitplan <code>name</code> stoppen, aber seinen internen Zähler nicht zurücksetzen. Diese Option hat keine Ausgabe.</li>
+                        <li><code>start</code> wird alle Zeitpläne (neu) starten. Jeder Zeitplan, der sein Limit erreicht hat, wird von vorne beginnen. Pausierte Zeitpläne werden fortgesetzt. Diese Option hat keine Ausgabe.</li>
+                        <li>FILTER: Das Hinzufügen von <code>-all</code> zu einem dieser Befehle wird auf alle Zeitpläne wirken. z.B. <code>status-all</code> wird den Status aller Zeitpläne zurückgeben</li>
+                        <li>FILTER: Das Hinzufügen von <code>-all-dynamic</code> zu einem dieser Befehle wirkt nur auf dynamische Zeitpläne, z.B. <code>remove-all-dynamic</code> wird alle dynamischen Zeitpläne entfernen</li>
+                        <li>FILTER: Das Hinzufügen von <code>-all-static</code> zu einem dieser Befehle wirkt nur auf statische Zeitpläne, z.B. <code>stop-all-static</code></li>
+                        <li>FILTER: Das Hinzufügen von <code>-active</code> zu den Befehlen status, export und remove wirkt auf alle aktiven Zeitpläne, z.B. <code>status-active</code></li>
+                        <li>FILTER: Das Hinzufügen von <code>-active-static</code> zu den Befehlen status, export und remove wirkt auf alle statischen Zeitpläne, die aktiv sind, z.B. <code>status-active-static</code></li>
+                        <li>FILTER: Das Hinzufügen von <code>-active-dynamic</code> zu den Befehlen status, export und remove wirkt auf alle dynamischen Zeitpläne, die aktiv sind, z.B. <code>status-active-dynamic</code></li>
+                        <li>FILTER: Das Hinzufügen von <code>-inactive</code> zu den Befehlen status, export und remove wirkt auf alle inaktiven Zeitpläne, z.B. <code>status-inactive</code></li>
+                        <li>FILTER: Das Hinzufügen von <code>-inactive-static</code> zu den Befehlen status, export und remove wirkt auf alle statischen Zeitpläne, die inaktiv sind, z.B. <code>status-inactive-static</code></li>
+                        <li>FILTER: Das Hinzufügen von <code>-inactive-dynamic</code> zu den Befehlen status, export und remove wirkt auf alle dynamischen Zeitpläne, die inaktiv sind, z.B. <code>status-inactive-dynamic</code></li>
+                    </ul>
+                </p>
+                <p><i>Beispiele...</i><br>
+                    Beispiel : Verwendung eines einfachen Befehlsthemas, um einen Zeitplan namens "schedule1" manuell auszulösen<br>
+                    <pre class="ui-scheduler-code"><code>msg: {
+  "topic": "trigger",
+  "payload": "schedule1"
+}</code></pre>                    
+                    Beispiel : Verwendung eines einfachen Befehlsthemas, um alle dynamisch hinzugefügten Zeitpläne zu exportieren...<br>
+                    <pre class="ui-scheduler-code"><code>msg: {
+  "topic": "export-all-dynamic"
+}</code></pre>                    
+                    Beispiel : Verwendung eines einfachen Befehlsthemas, um einen Zeitplan namens "schedule1" zu löschen<br>
+                    <pre class="ui-scheduler-code"><code>msg: {
+  "topic": "remove",
+  "payload": "schedule1"
+}</code></pre>                    
+                    Beispiel : Verwendung einer cmd-Nutzlast, um alle Zeitpläne zu pausieren...<br>
+                    <pre class="ui-scheduler-code"><code>payload: {
+  "command": "pause-all"
+}</code></pre> 
+                    Beispiel : Verwendung eines einfachen Befehlsthemas, um alle dynamischen Zeitpläne zu löschen, die abgeschlossen sind<br>
+                    <pre class="ui-scheduler-code"><code>msg: {
+  "topic": "remove-inactive-dynamic"
+}</code></pre>                    
+                </p>
+            </p>
+            </p>
+
+
+<p><b>Beschreiben</b><br>
+                Beispiel : cmd-Nutzlast zur Beschreibung eines cron-Ausdrucks...<br>
+                <pre class="ui-scheduler-code"><code>{
+  "command": "describe",
+  "expressionType": "cron",
+  "expression": "0 */5 * * * MON *",
+  "timeZone": "Europe/London"
+}</code></pre>
+                Beispiel : cmd-Nutzlast zur Abrufung aller Sonnenereigniszeiten + Sonnenstatus zu diesem Zeitpunkt...<br>
+<pre class="ui-scheduler-code"><code>{
+  "command": "describe",
+  "expressionType": "solar",
+  "location": "54.9992500,-1.4170300",
+  "solarType": "all",
+  "timeZone": "Europe/London"
+}</code></pre>
+                Beispiel : cmd-Nutzlast zur Abrufung von 4 Sonnenereigniszeiten + Sonnenstatus für einen bestimmten Zeitpunkt...<br>
+    <pre class="ui-scheduler-code"><code>{
+  "command": "describe",
+  "expressionType": "solar",
+  "time": "2020-03-22 18:40",
+  "location": "54.9992500,-1.4170300",
+  "solarType": "selected",
+  "solarEvents": "civilDawn,sunrise,sunset,civilDusk",
+  "timeZone": "Europe/London"
+}</code></pre>
+                <p><i>Details...</i><br>
+                    Gibt ein Objekt in der Nutzlast zurück, das lesbare Informationen für den angegebenen Ausdruck enthält.
+                    <ul>
+                        <li>Befehl: (string|erforderlich) Die auszuführende Operation</li>
+                        <li>Ausdruck: (string|erforderlich) Der zu beschreibende Ausdruck</li>
+                        <li>Zeitzone: (string|optional) Eine zu verwendende Zeitzone. Lassen Sie dieses Feld leer, um die Systemzeitzone zu verwenden. Alternativ können Sie UTC oder eine Zeitzone im Format Region/Area eingeben (<a target="_blank" href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">Liste</a>)</li>
+                    </ul>
+                </p>
+            </p>                
+        </dd>
+        <dd>ALLGEMEINE HINWEISE...<br>
+            <ul>
+                <li>Das Hinzufügen eines Zeitplans mit demselben Namen wie ein vorhandener Zeitplan ersetzt den vorhandenen</li>
+                <li>Das Hinzufügen eines Zeitplans mit der Eigenschaft <code>"limit":3</code> führt dazu, dass dieser Zeitplan nach dem dritten Auslöser gestoppt wird. Er kann durch Injektion einer Nutzlast von <code>{"command":"start" "name": "schedule name"}</code> erneut gestartet werden</li>
+                <li>Statische (UI hinzugefügte) Zeitpläne können auch aktualisiert werden, indem der im UI angegebene Name verwendet wird</li>
+                <li>Wenn ein ui-scheduler-Knoten geändert und bereitgestellt wird (oder node-red neu gestartet wird), werden dynamische Einträge verworfen und müssen erneut injiziert werden</li>
+                <li>Wenn ein ui-scheduler-Knoten eine Nachricht als Antwort auf einen Befehl ausgibt, wird <code>msg.commandResponse</code> <code>true</code> sein, um anzuzeigen, dass die Nachricht als Antwort auf einen Befehl und nicht auf ein geplantes Ereignis erfolgt</li>
+                <li>Wenn ein ui-scheduler-Knoten eine Nachricht für ein cron-/Sonnenereignis ausgibt, wird <code>msg.scheduledEvent</code> <code>true</code> sein, um anzuzeigen, dass die Nachricht aufgrund eines geplanten Ereignisses und nicht als Kontrollantwort erfolgt</li>
+                <li>Der Statusindikator wird als "Ring" für dynamische Zeitpläne oder als "Punkt" für statische Zeitpläne angezeigt</li>
+                <li>wenn die Nutzlast auf "Standard-Nutzlast" eingestellt ist, wird der Inhalt von <code>msg.ui-scheduler</code> in <code>msg.payload</code> verschoben</li>
+            </ul>
+        </dd>
+    </dl>
+
+<h3 id="understanding-timezone">Zeitzone verstehen...</h3>
+    <dl class="message-properties">
+        <h4>Vorwort</h4>
+        <p>Die Zeitzone sollte aus Ihrem aktuellen Blickwinkel wahrgenommen werden. Unabhängig davon, wo Ihr node-red läuft, können Sie es zum Beispiel "fälschen", indem Sie im Zeitzoneneintrag Ihre eigene Zeitzone angeben, in der/dem Sie das Ereignis erwarten.
+        </p>
+
+        <h4><b>Beispiel 1...</b></h4>
+        <p>Starten Sie einen Ablauf, wenn die NYSE-Börse mit dem Handel beginnt und aufhört.
+        </p>
+
+        <h4 id="notes">HINWEISE</h4>
+        <ul>
+            <li>Dieses Beispiel funktioniert das ganze Jahr über, wurde jedoch am 15. April geschrieben, mit <code>GMT+1 / BST</code> und <code>GMT-4 / EDT</code> als Referenzpunkt.</li>
+            <li>Der Server befindet sich in London (GMT+1 / BST)</li>
+            <li>Die NYSE-Börse läuft von 09:30 bis 16:00 Uhr Montag bis Freitag</li>
+        </ul>
+
+        <h4 id="details">DETAILS</h4>
+        <ul>
+            <li>NY-Zeit 09:30 (GMT-4 / EDT) - dies ist die Zeit, zu der der Markt in New York öffnet</li>
+            <li>Serverzeit 14:30 (GMT+1 / BST äquivalent) - das Startereignis wird zu dieser Zeit in London stattfinden</li>
+            <li>NY-Zeit 16:00 (GMT-4 / EDT) - dies ist die Zeit, zu der der Markt in New York schließt</li>
+            <li>Serverzeit 21:00 (GMT+1 / BST äquivalent) - das Stoppereignis wird zu dieser Zeit in London stattfinden</li>
+        </ul>
+
+        <h4 id="setup">EINRICHTUNG</h4>
+        <ul>
+            <li>Geben Sie <code>America/New_York</code> in das <code>Zeitzone</code>-Feld ein</li>
+            <li>Fügen Sie einen neuen Zeitplan hinzu...
+                <ul>
+                    <li>Feld 1 (Name)      : Geben Sie &quot;NYSEOPEN &quot; ein</li>
+                    <li>Feld 2 (Thema)     : Geben Sie &quot;stocks/nyse/trading&quot; ein</li>
+                    <li>Feld 3 (Nutzlast)  : Wählen Sie Boolean - true</li>
+                    <li>Feld 4 (Typ)       : Wählen Sie &quot;cron&quot;</li>
+                    <li>Feld 5 (Ausdruck)  : Geben Sie den Ausdruck <code>0 30 9 * * 1-5</code> ein</li>                    
+                </ul>
+            </li>
+            <li>Fügen Sie einen neuen Zeitplan hinzu...
+                <ul>
+                    <li>Feld 1 (Name)      : Geben Sie &quot;NYSECLOSE &quot; ein</li>
+                    <li>Feld 2 (Thema)     : Geben Sie &quot;stocks/nyse/trading&quot; ein</li>
+                    <li>Feld 3 (Nutzlast)  : Wählen Sie Boolean - false</li>
+                    <li>Feld 4 (Typ)       : Wählen Sie &quot;cron&quot;</li>
+                    <li>Feld 5 (Ausdruck)  : Geben Sie den Ausdruck <code>0 0 16 * * 1-5</code> ein</li>
+                </ul>
+            </li>
+        </ul>  
+        
+        <p></p>         
+
+        <h4><b>Beispiel 2...</b></h4>
+        <p>Erhalten Sie eine Erinnerung (in Moskau), um Ihre Frau 30 Minuten nach Sonnenaufgang in Kairo anzurufen.</p>
+
+        <h4 id="notes">HINWEISE</h4>
+        <ul>
+            <li>Dieses Beispiel funktioniert das ganze Jahr über, wurde jedoch am 15. April als Referenzpunkt geschrieben</li>
+            <li>Der Server befindet sich in London (GMT+1 / BST)</li>
+            <li>Meine Frau ist im Urlaub in Kairo (GMT+2)
+                <ul>
+                    <li>Der Sonnenaufgang ist in Kairo am 15. April um 05:27 Uhr</li>
+                </ul>
+            </li>
+            <li>Ich bin geschäftlich in Moskau (GMT+3)
+                <ul>
+                    <li>Ich benötige eine Erinnerung, um meine Frau 30 Minuten nach dem Sonnenaufgang in Kairo anzurufen</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h4 id="details">DETAILS</h4>
+        <ul>
+            <li>Kairoer Sonnenaufgangszeit 05:27 (15. April) - 30 Minuten später um 05:57 erwartet meine Frau einen Anruf.</li>
+            <li>Serverzeit 04:57 (GMT+1 äquivalent) - das Ereignis wird zu dieser Zeit in London stattfinden</li>
+            <li>Moskauer Zeit 06:57 (GMT+3 äquivalent) - dies ist die Zeit, zu der es in Moskau sein wird</li>
+        </ul>
+
+        <h4 id="setup">EINRICHTUNG</h4>
+        <ul>
+            <li>Geben Sie <code>Europe/Moscow</code> in das <code>Zeitzone</code>-Feld ein</li>
+            <li>Fügen Sie einen neuen Zeitplan hinzu...
+                <ul>
+                    <li>Feld 1 (Name)    : Geben Sie &quot;Anruferinnerung&quot; ein</li>
+                    <li>Feld 2 (Thema)   : Geben Sie &quot;call/wife&quot; ein</li>
+                    <li>Feld 3 (Nutzlast): Wählen Sie Standard</li>
+                    <li>Feld 4 (Typ)     : Wählen Sie &quot;Sonnenereignisse&quot;</li>
+                    <li>Feld 5 (Ereignisse): Wählen Sie &quot;Sonnenaufgang&quot;</li>
+                    <li>Feld 6 (Standort): Geben Sie die Koordinaten für den Sonnenaufgangsort (Kairo) <code>30.04905845622014 31.229496002197262</code> ein</li>
+                    <li>Feld 7 (Versatz) : Geben Sie einen Versatz von 30 ein (geben Sie ihr Zeit, einen Kaffee zu machen)</li>
+                </ul>
+            </li>
+        </ul>   
+
+    </dl>
+    
+</script>
